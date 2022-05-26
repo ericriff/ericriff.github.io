@@ -84,7 +84,7 @@ theme_mode: dark  # [light|dark]
 img_cdn:
 
 # the avatar on sidebar, support local or CORS resources
-avatar: https://github.com/ericriff/ericriff.github.io/blob/main/assets/profile.jpeg?raw=true
+avatar: assets/profile.jpeg
 
 # boolean type, the global switch for ToC in posts.
 toc: true
