@@ -75,4 +75,96 @@ ct-ng menuconfig
 Now you're ready to start building custom toolchains. Happy hacking!
 
 ## Docker-based builds.
-Under construction.
+This way of building this tool is a bit more involved and requires to have `docker` installed and have some basic understanding of how it works. The main advantage is that nothing will get installed in your OS.
+The following `Dockerfile` takes care of everything and it's fairly straight forward: install the requirements, get the sources, build the tool, install it, delete the sources.  After you build this Dockerfile you will end up with an Ubuntu 20.04-based docker image with the latest `crosstool-ng` installed.
+
+### Getting started
+Create the following Dockerfile:
+```Dockerfile
+
+FROM ubuntu:focal
+
+# Create non-root uset since crosstool-ng doesn't like root.
+ARG USERNAME=developer
+ARG USER_UID=1000
+ARG USER_GID=$USER_UID
+RUN : \
+    && groupadd --gid $USER_GID $USERNAME \
+    && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME \
+    && apt-get update \
+    && apt-get install -y sudo \
+    && echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME \
+    && chmod 0440 /etc/sudoers.d/$USERNAME \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/list/* \
+    && :
+
+# Install required packages
+RUN : \
+    && apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        gcc \
+        g++ \
+        flex \
+        autoconf \
+        automake \
+        texinfo \
+        xz-utils \
+        unzip \
+        help2man \
+        file \
+        patch \
+        gawk \
+        make \
+        libtool \
+        libtool-bin \
+        libncurses5-dev \
+        bison \
+        curl \
+        wget \
+        git \
+        openssl \
+        ca-certificates \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/list/* \
+    && :
+
+# Switch to the non-root user
+USER $USERNAME
+
+# Get the sources
+WORKDIR /home/$USERNAME
+RUN git clone https://github.com/crosstool-ng/crosstool-ng.git
+WORKDIR /home/$USERNAME/crosstool-ng
+
+# Best attempt at checking out the latest release
+RUN git checkout $(git tag -l --sort=-version:refname crosstool-ng-*.*.? | head -n 1)
+
+# Build
+RUN ./bootstrap
+RUN ./configure --prefix /opt/crosstool-ng
+RUN make all
+RUN sudo make install
+
+# Expose ct-ng in PATH
+ENV PATH=/opt/crosstool-ng/bin:$PATH
+
+# Cleanup
+WORKDIR /home/$USERNAME
+RUN rm -rf crosstool-ng
+```
+
+Create the image with the following command. This will take a while.
+
+> You must run this command on the same folder you have created the Dockerfile
+{: .prompt-info }
+
+```bash
+docker build --network=host --tag crosstool-ng .
+```
+
+If you got this far, you're ready to go. Just spawn the docker image you just built and start compiling!
+
+```bash
+ docker run -it --rm crosstool-ng bash
+```
