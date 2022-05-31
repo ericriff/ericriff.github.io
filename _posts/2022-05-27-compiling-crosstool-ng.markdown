@@ -37,7 +37,7 @@ As mentioned before, in order to build natively you need to install many package
 
 ```bash
 sudo apt update
-sudo apt install -y gcc g++ flex autoconf texinfo xz-utils unzip help2man file patch gawk make libtool libtool-bin libncurses5-dev bison
+sudo apt install -y gcc g++ flex autoconf automake texinfo xz-utils unzip help2man file patch gawk make libtool libtool-bin libncurses5-dev bison curl wget
 ```
 
 ### Building and Installing
